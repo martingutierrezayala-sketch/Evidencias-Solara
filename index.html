@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#667eea">
     <meta name="description" content="App offline para subir evidencias fotográficas">
-    <title>Evidencias Solara PWA</title>
+    <title>Evidencias Solara</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icono.png" type="image/png">
+    <link rel="apple-touch-icon" href="icono.png">
     
     <style>
         * {
@@ -63,6 +64,37 @@
         input[type="file"] {
             padding: 10px;
             cursor: pointer;
+            display: none;
+        }
+        .btn-camera {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-camera:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+        .btn-camera:active {
+            transform: translateY(0);
+        }
+        .file-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #1976d2;
+            text-align: center;
+            display: none;
         }
         button {
             width: 100%;
@@ -171,12 +203,12 @@
 </head>
 <body>
     <div class="container">
-        <h2>📸 Evidencias Solara PWA</h2>
+        <h2>📸 Evidencias Solara</h2>
 
         <div class="status-section">
             <div id="estado-conexion" class="online">ONLINE</div>
             <div class="queue-count-display">
-                Pendientes en cola: <span id="queue-count">0</span>
+                Cola: <span id="queue-count">0</span>
             </div>
         </div>
 
@@ -202,10 +234,20 @@
             </select>
             <input type="text" id="tecnicoNuevo" placeholder="Escriba el nombre del nuevo técnico" style="margin-top: 8px; display: none;">
 
-            <label for="file-input">Fotos (máx 100 imágenes)</label>
-            <input type="file" id="file-input" accept="image/*" multiple required> 
+            <label for="file-input">Fotos</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button type="button" class="btn-camera" id="btnTomarFoto" style="margin-top: 0; background: #4CAF50;">
+                    📷 Cámara
+                </button>
+                <button type="button" class="btn-camera" id="btnGaleria" style="margin-top: 0; background: #2196F3;">
+                    🖼️ Galería
+                </button>
+            </div>
+            <input type="file" id="file-input-camera" accept="image/*" capture="environment" style="display: none;">
+            <input type="file" id="file-input" accept="image/*" multiple style="display: none;">
+            <div class="file-info" id="file-info"></div>
 
-            <button type="submit" id="btnSubir">Subir Foto</button>
+            <button type="submit" id="btnSubir">Subir Foto(s)</button>
             
             <div class="progress-container" id="progressContainer">
                 <div class="progress-bar" id="progressBar">0%</div>
@@ -216,18 +258,16 @@
         <div class="status-message" id="status-message"></div>
     </div>
     
-    <!-- Cargar localforage desde CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-    
-    <!-- Cargar tu app.js -->
     <script src="app.js"></script>
     
-    <!-- Registrar el service worker -->
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js')
-                .then(reg => console.log('✅ Service Worker registrado', reg))
-                .catch(err => console.log('❌ Error al registrar Service Worker', err));
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(reg => console.log('✅ SW registrado', reg))
+                    .catch(err => console.log('❌ SW error', err));
+            });
         }
     </script>
 </body>

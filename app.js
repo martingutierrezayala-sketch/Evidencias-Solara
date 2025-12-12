@@ -12,7 +12,9 @@ const formElements = {
     tecnico: document.getElementById('tecnico'),
     tecnicoNuevo: document.getElementById('tecnicoNuevo'),
     fileInput: document.getElementById('file-input'),
+    fileInputCamera: document.getElementById('file-input-camera'),
     btnTomarFoto: document.getElementById('btnTomarFoto'),
+    btnGaleria: document.getElementById('btnGaleria'),
     btnSubir: document.getElementById('btnSubir'),
     statusMessage: document.getElementById('status-message'),
     estadoConexion: document.getElementById('estado-conexion'),
@@ -323,8 +325,11 @@ async function handleFormSubmit(event) {
         updateProgress(filesProcessedCount, totalFiles);
     }
     
-    formElements.fileInput.value = ''; 
+    formElements.fileInput.value = '';
     formElements.fileInfo.style.display = 'none';
+    
+    // NO resetear selecciones - mantener valores
+    // Solo limpiar técnico nuevo si fue usado
     
     if (selectionsToRetain.tecnicoSelected === '__NUEVO__') {
         formElements.tecnicoNuevo.value = '';
@@ -340,7 +345,8 @@ async function handleFormSubmit(event) {
     }
     
     formElements.btnSubir.disabled = false; 
-    formElements.btnSubir.textContent = "Subir Foto";
+    formElements.btnSubir.textContent = "Subir Foto(s)";
+    formElements.form.reset(); // Limpiar formulario completo
     setTimeout(() => formElements.progressContainer.style.display = 'none', 1000);
     
     const queueCount = await localforage.length();
@@ -425,11 +431,31 @@ document.addEventListener('DOMContentLoaded', () => {
     localforage.length().then(count => updateQueueCount(count));
     formElements.form.addEventListener('submit', handleFormSubmit);
     formElements.fileInput.addEventListener('change', updateFileInfo);
+    formElements.fileInputCamera.addEventListener('change', handleCameraCapture);
     
-    // Botón tomar foto
+    // Botón cámara directa
     if (formElements.btnTomarFoto) {
         formElements.btnTomarFoto.addEventListener('click', () => {
+            formElements.fileInputCamera.click();
+        });
+    }
+    
+    // Botón galería
+    if (formElements.btnGaleria) {
+        formElements.btnGaleria.addEventListener('click', () => {
             formElements.fileInput.click();
         });
     }
 });
+
+// Manejar foto de cámara
+function handleCameraCapture(e) {
+    const file = e.target.files[0];
+    if (file) {
+        // Crear un FileList virtual para mantener compatibilidad
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        formElements.fileInput.files = dataTransfer.files;
+        updateFileInfo();
+    }
+}
