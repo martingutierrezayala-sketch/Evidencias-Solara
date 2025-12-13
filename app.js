@@ -448,14 +448,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Manejar foto de cámara
+// Manejar foto de cámara - ACUMULAR
 function handleCameraCapture(e) {
-    const file = e.target.files[0];
-    if (file) {
-        // Crear un FileList virtual para mantener compatibilidad
+    const newFile = e.target.files[0];
+    if (newFile) {
         const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
+        
+        // Agregar fotos existentes primero
+        for (let i = 0; i < formElements.fileInput.files.length; i++) {
+            dataTransfer.items.add(formElements.fileInput.files[i]);
+        }
+        
+        // Agregar la nueva foto
+        dataTransfer.items.add(newFile);
+        
+        // Actualizar el input principal
         formElements.fileInput.files = dataTransfer.files;
         updateFileInfo();
+        
+        // Limpiar el input de cámara para la próxima foto
+        formElements.fileInputCamera.value = '';
     }
 }
