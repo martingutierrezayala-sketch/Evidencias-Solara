@@ -448,25 +448,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Manejar foto de cámara - ACUMULAR
+// Manejar foto de cámara - ACUMULAR (CORREGIDO)
 function handleCameraCapture(e) {
-    const newFile = e.target.files[0];
-    if (newFile) {
-        const dataTransfer = new DataTransfer();
-        
-        // Agregar fotos existentes primero
-        for (let i = 0; i < formElements.fileInput.files.length; i++) {
-            dataTransfer.items.add(formElements.fileInput.files[i]);
-        }
-        
-        // Agregar la nueva foto
-        dataTransfer.items.add(newFile);
-        
-        // Actualizar el input principal
-        formElements.fileInput.files = dataTransfer.files;
-        updateFileInfo();
-        
-        // Limpiar el input de cámara para la próxima foto
+    const newFiles = Array.from(e.target.files);
+    if (newFiles.length === 0) return;
+    
+    const dataTransfer = new DataTransfer();
+    
+    // PRIMERO: Agregar fotos existentes del input principal
+    const existingFiles = Array.from(formElements.fileInput.files);
+    existingFiles.forEach(file => dataTransfer.items.add(file));
+    
+    // SEGUNDO: Agregar las nuevas fotos de la cámara
+    newFiles.forEach(file => dataTransfer.items.add(file));
+    
+    // Actualizar el input principal con TODAS las fotos
+    formElements.fileInput.files = dataTransfer.files;
+    
+    // Mostrar info actualizada
+    updateFileInfo();
+    
+    // Mensaje de confirmación
+    showStatus(`📷 Foto agregada. Total: ${dataTransfer.files.length} foto(s)`, 'success', 2000);
+    
+    // IMPORTANTE: Limpiar el input de cámara para la próxima captura
+    setTimeout(() => {
         formElements.fileInputCamera.value = '';
-    }
+    }, 100);
 }
