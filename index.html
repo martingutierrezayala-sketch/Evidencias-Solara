@@ -284,11 +284,16 @@
             }, 2000);
         });
         
-        // Registrar Service Worker
+        // Registrar Service Worker CON RUTA CORRECTA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js')
-                    .then(reg => console.log('✅ SW registrado', reg))
+                navigator.serviceWorker.register('./service-worker.js', {
+                    scope: '/Evidencias-Solara/'
+                })
+                    .then(reg => {
+                        console.log('✅ SW registrado', reg);
+                        reg.update(); // Forzar actualización
+                    })
                     .catch(err => console.error('❌ SW error', err));
             });
         }

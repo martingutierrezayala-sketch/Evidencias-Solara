@@ -45,10 +45,10 @@ localforage.config({
 // ======================================================
 
 async function compressImage(file) {
-    const MAX_SIZE_KB = 300;
+    const MAX_SIZE_KB = 500; // Cambiado a 500 KB (mejor para evidencias técnicas)
     const fileSizeKB = file.size / 1024;
     
-    // Si ya es menor a 300 KB, no comprimir
+    // Si ya es menor a 500 KB, no comprimir
     if (fileSizeKB <= MAX_SIZE_KB) {
         console.log(`${file.name}: ${fileSizeKB.toFixed(0)} KB - No requiere compresión`);
         return file;
@@ -85,7 +85,7 @@ async function compressImage(file) {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // Calcular calidad necesaria para llegar a ~300 KB
+                // Calcular calidad necesaria para llegar a ~500 KB
                 let quality = 0.7;
                 if (fileSizeKB > 2000) quality = 0.5;
                 else if (fileSizeKB > 1000) quality = 0.6;
@@ -408,7 +408,7 @@ async function handleFormSubmit(event) {
     
     formElements.btnSubir.disabled = false; 
     formElements.btnSubir.textContent = "Subir Foto(s)";
-    formElements.form.reset(); // Limpiar formulario completo
+    
     setTimeout(() => formElements.progressContainer.style.display = 'none', 1000);
     
     const queueCount = await localforage.length();
@@ -537,4 +537,16 @@ function handleCameraCapture(e) {
     setTimeout(() => {
         formElements.fileInputCamera.value = '';
     }, 100);
+}
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker
+            .register('/Evidencias-Solara/service-worker.js')
+            .then(reg => {
+                console.log('✅ Service Worker registrado:', reg.scope);
+            })
+            .catch(err => {
+                console.error('❌ Error registrando SW:', err);
+            });
+    });
 }
