@@ -48,7 +48,7 @@ async function compressImage(file) {
     const MAX_SIZE_KB = 500; // Cambiado a 500 KB (mejor para evidencias técnicas)
     const fileSizeKB = file.size / 1024;
     
-    // Si ya es menor a 500 KB, no comprimir
+    // Si ya es menor a 300 KB, no comprimir
     if (fileSizeKB <= MAX_SIZE_KB) {
         console.log(`${file.name}: ${fileSizeKB.toFixed(0)} KB - No requiere compresión`);
         return file;
@@ -85,7 +85,7 @@ async function compressImage(file) {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // Calcular calidad necesaria para llegar a ~500 KB
+                // Calcular calidad necesaria para llegar a ~300 KB
                 let quality = 0.7;
                 if (fileSizeKB > 2000) quality = 0.5;
                 else if (fileSizeKB > 1000) quality = 0.6;
@@ -408,7 +408,7 @@ async function handleFormSubmit(event) {
     
     formElements.btnSubir.disabled = false; 
     formElements.btnSubir.textContent = "Subir Foto(s)";
-    
+    formElements.form.reset(); // Limpiar formulario completo
     setTimeout(() => formElements.progressContainer.style.display = 'none', 1000);
     
     const queueCount = await localforage.length();
@@ -490,7 +490,10 @@ document.addEventListener('DOMContentLoaded', () => {
     updateConnectionStatus();
     window.addEventListener('online', updateConnectionStatus);
     window.addEventListener('offline', updateConnectionStatus);
-    localforage.length().then(count => updateQueueCount(count));
+    
+    // Cargar cola persistente al iniciar
+    loadPersistentQueue();
+    
     formElements.form.addEventListener('submit', handleFormSubmit);
     formElements.fileInput.addEventListener('change', updateFileInfo);
     formElements.fileInputCamera.addEventListener('change', handleCameraCapture);
@@ -510,43 +513,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Manejar foto de cámara - ACUMULAR (CORREGIDO)
-function handleCameraCapture(e) {
+// Cargar fotos temporales guardadas (persisten al cerrar app)
+async function loadPersistentQueue() {
+    const keys = await localforage.keys();
+    const tempPhotos = keys.filter(k => k.startsWith('temp-photo-'));
+    
+    if (tempPhotos.length > 0) {
+        showStatus(`📦 ${tempPhotos.length} foto(s) pendiente(s) recuperadas. Toca "Subir Foto(s)" para sincronizar.`, 'info', 0);
+    }
+    
+    // Actualizar contador total (temporales + cola de subida)
+    const queueCount = await localforage.length();
+    updateQueueCount(queueCount);
+}
+
+// Manejar foto de cámara - GUARDAR INMEDIATAMENTE en IndexedDB
+async function handleCameraCapture(e) {
     const newFiles = Array.from(e.target.files);
     if (newFiles.length === 0) return;
     
     const dataTransfer = new DataTransfer();
     
-    // PRIMERO: Agregar fotos existentes del input principal
+    // Agregar fotos existentes
     const existingFiles = Array.from(formElements.fileInput.files);
     existingFiles.forEach(file => dataTransfer.items.add(file));
     
-    // SEGUNDO: Agregar las nuevas fotos de la cámara
+    // Agregar nuevas fotos
     newFiles.forEach(file => dataTransfer.items.add(file));
     
-    // Actualizar el input principal con TODAS las fotos
+    // Actualizar el input principal
     formElements.fileInput.files = dataTransfer.files;
     
-    // Mostrar info actualizada
-    updateFileInfo();
+    // CRÍTICO: Guardar en IndexedDB inmediatamente
+    for (const file of newFiles) {
+        const compressedFile = await compressImage(file);
+        const photoData = await readFileAsBase64(compressedFile);
+        
+        // Guardar en cola temporal persistente
+        const tempKey = `temp-photo-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        await localforage.setItem(tempKey, {
+            nombre: file.name,
+            contenido: photoData,
+            fecha: new Date().toISOString(),
+            temporal: true // Marca como temporal para distinguirla
+        });
+    }
     
-    // Mensaje de confirmación
+    updateFileInfo();
     showStatus(`📷 Foto agregada. Total: ${dataTransfer.files.length} foto(s)`, 'success', 2000);
     
-    // IMPORTANTE: Limpiar el input de cámara para la próxima captura
     setTimeout(() => {
         formElements.fileInputCamera.value = '';
     }, 100);
-}
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker
-            .register('/Evidencias-Solara/service-worker.js')
-            .then(reg => {
-                console.log('✅ Service Worker registrado:', reg.scope);
-            })
-            .catch(err => {
-                console.error('❌ Error registrando SW:', err);
-            });
-    });
 }
