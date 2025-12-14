@@ -179,9 +179,71 @@ function populateSelects() {
     optNuevo.value = "__NUEVO__";
     optNuevo.textContent = "➕ Agregar técnico nuevo";
     tecnico.appendChild(optNuevo);
-    ciclo.addEventListener('change', updateSectors);
-    formElements.sector.addEventListener('change', updateRutas);
-    tecnico.addEventListener('change', toggleTecnicoNuevo);
+    
+    // RESTAURAR selecciones guardadas
+    restoreSelections();
+    
+    ciclo.addEventListener('change', () => {
+        updateSectors();
+        saveSelections();
+    });
+    formElements.sector.addEventListener('change', () => {
+        updateRutas();
+        saveSelections();
+    });
+    formElements.ruta.addEventListener('change', saveSelections);
+    tecnico.addEventListener('change', () => {
+        toggleTecnicoNuevo();
+        saveSelections();
+    });
+}
+
+// GUARDAR selecciones en localStorage
+function saveSelections() {
+    const selections = {
+        ciclo: formElements.ciclo.value,
+        sector: formElements.sector.value,
+        ruta: formElements.ruta.value,
+        tecnico: formElements.tecnico.value
+    };
+    localStorage.setItem('evidencias_selections', JSON.stringify(selections));
+    console.log('💾 Selecciones guardadas:', selections);
+}
+
+// RESTAURAR selecciones desde localStorage
+function restoreSelections() {
+    try {
+        const saved = localStorage.getItem('evidencias_selections');
+        if (saved) {
+            const selections = JSON.parse(saved);
+            console.log('📂 Restaurando selecciones:', selections);
+            
+            // Restaurar en orden: ciclo → sector → ruta → técnico
+            if (selections.ciclo) {
+                formElements.ciclo.value = selections.ciclo;
+                updateSectors(); // Esto carga los sectores
+                
+                setTimeout(() => {
+                    if (selections.sector) {
+                        formElements.sector.value = selections.sector;
+                        updateRutas(); // Esto carga las rutas
+                        
+                        setTimeout(() => {
+                            if (selections.ruta) {
+                                formElements.ruta.value = selections.ruta;
+                            }
+                            if (selections.tecnico) {
+                                formElements.tecnico.value = selections.tecnico;
+                                toggleTecnicoNuevo();
+                            }
+                        }, 100);
+                    }
+                }, 100);
+            }
+        }
+    } catch (error) {
+        console.error('Error restaurando selecciones:', error);
+    }
 }
 
 function populateDropdown(selectElement, dataArray, defaultText) {
